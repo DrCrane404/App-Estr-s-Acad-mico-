@@ -1,1 +1,0 @@
-Carpeta para conexion con api y logica del sistema
