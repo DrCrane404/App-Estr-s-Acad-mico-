@@ -1,6 +1,6 @@
 import requests
 
-BASE_URL="Link de render"
+BASE_URL="http://localhost:3000"
 
 def post(endpoint, data):
     try:
@@ -14,11 +14,12 @@ def login(email, password):
         "email":email,
         "password": password
     })
-def register(nombre,email,password,pregunta,respuesta):
+def register(name,username,email,password,r_question, r_aswer):
     return post("/auth/register",{
-        "nombre":nombre,
+        "name":name,
+        "username":username,
         "email":email,
         "password":password,
-        "pregunta_recuperacion":pregunta,
-        "respuesta_recuperacion":respuesta
+        "r_question":r_question,
+        "r_answer":r_aswer
     })
