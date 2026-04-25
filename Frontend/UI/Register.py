@@ -16,8 +16,8 @@ def register():
     email = entry_email.get().strip()
     password = entry_password.get().strip()
     confirm = entry_confirm.get().strip()
-    r_question = entry_question.get().strp()
-    r_answer = entry_answer.get().strp()
+    r_question =combo_question.get().strip()
+    r_answer = entry_answer.get().strip()
     
 
     # Validación básica antes de llamar al servidor
