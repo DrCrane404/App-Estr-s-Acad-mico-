@@ -23,3 +23,18 @@ def register(name,username,email,password,r_question, r_aswer):
         "r_question":r_question,
         "r_answer":r_aswer
     })
+
+# Recuperacion de contraseña
+def solicitar_codigo_recuperacion(email: str) -> dict:
+    """Llama al backend para que genere y envíe el código al correo."""
+    return post("/auth/forgot-password", {
+        "email": email
+    })
+
+def cambiar_contraseña(email: str, codigo: str, nueva_contraseña: str) -> dict:
+    """Valida el código y actualiza la contraseña en el backend."""
+    return post("/auth/reset-password", {
+        "email": email,
+        "code": codigo,
+        "newPassword": nueva_contraseña
+    })
