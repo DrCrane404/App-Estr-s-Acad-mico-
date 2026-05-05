@@ -31,14 +31,19 @@ def register():
 
     if len(password) < 6:
         messagebox.showwarning("Error", "La contraseña debe ser de al menos 6 caracteres")
+        return
 
     # Llamar al servicio
-    respuesta = UsuarioService.login(name, username, email, password, confirm, r_question, r_answer)
-
-    if respuesta.get("Success") or respuesta.get("token"):
+    respuesta = UsuarioService.register(name, username, email, password, r_question, r_answer)
+    print(respuesta)
+    if respuesta.get("success") or respuesta.get("token"):
         messagebox.showinfo("Registro exitoso", f"¡Bienvenido, {name}! Tu cuenta fue creada.")
         # Aquí se abre la siguiente pantalla y cerrar el login
         root.destroy()
+        import subprocess
+        import sys
+        subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "Login.py")])
+        
     else:
         error = respuesta.get("error", "No se pudo completar el registro.")
         messagebox.showerror("Error al registarse", error)
