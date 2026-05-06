@@ -14,27 +14,25 @@ def login(email, password):
         "email":email,
         "password": password
     })
-def register(name,username,email,password,r_question, r_aswer):
+def register(name,username,email,password):
     return post("/auth/register",{
         "name":name,
         "username":username,
         "email":email,
         "password":password,
-        "r_question":r_question,
-        "r_answer":r_aswer
     })
 
 # Recuperacion de contraseña
 def solicitar_codigo_recuperacion(email: str) -> dict:
-    """Llama al backend para que genere y envíe el código al correo."""
+    #Llama al backend para que genere y envíe el código al correo.
     return post("/auth/forgot-password", {
         "email": email
     })
 
-def cambiar_contraseña(email: str, codigo: str, nueva_contraseña: str) -> dict:
+def cambiar_contraseña(email:str, codigo: str, nueva_contraseña: str) -> dict:
     """Valida el código y actualiza la contraseña en el backend."""
     return post("/auth/reset-password", {
-        "email": email,
-        "code": codigo,
+        "email":email,
+        "code":codigo,
         "newPassword": nueva_contraseña
     })

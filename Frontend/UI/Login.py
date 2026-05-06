@@ -34,7 +34,7 @@ def recuperar_contraseña():
     """Abre una ventana emergente para recuperar la contraseña en dos pasos."""
     ventana = tb.Toplevel(root)
     ventana.title("Recuperar contraseña")
-    ventana.geometry("380x320")
+    ventana.geometry("580x720")
     ventana.resizable(False, False)
     ventana.place_window_center()
     ventana.grab_set()  # bloquea la ventana principal mientras esta está abierta
@@ -70,7 +70,7 @@ def recuperar_contraseña():
 
         respuesta = UsuarioService.solicitar_codigo_recuperacion(email)
 
-        if respuesta.get("Success"):
+        if respuesta.get("success"):
             messagebox.showinfo("Código enviado",
                                 f"Se envió un código a {email}. Revisa tu correo.", parent=ventana)
             btn_enviar.config(state="disabled")
@@ -95,7 +95,7 @@ def recuperar_contraseña():
 
         respuesta = UsuarioService.cambiar_contraseña(email, codigo, nueva)
 
-        if respuesta.get("Success"):
+        if respuesta.get("success"):
             messagebox.showinfo("¡Listo!", "Tu contraseña fue actualizada. Ya puedes iniciar sesión.", parent=ventana)
             ventana.destroy()
         else:
