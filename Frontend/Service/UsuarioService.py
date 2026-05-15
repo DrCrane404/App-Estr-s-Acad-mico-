@@ -1,7 +1,7 @@
 import requests
 
 BASE_URL="http://localhost:3000"
-
+#Creacion de Usuarios
 def post(endpoint, data):
     try:
         response = requests.post(f"{BASE_URL}{endpoint}",json=data)
@@ -35,4 +35,15 @@ def cambiar_contraseña(email:str, codigo: str, nueva_contraseña: str) -> dict:
         "email":email,
         "code":codigo,
         "newPassword": nueva_contraseña
+    })
+
+#Creacion de tareas
+def crear_Tarea(title:str, description:str, stressLevel:int, tType:str, startDate:str, finishDate:str):
+    return post("/task",{
+        "title": title,
+        "description":description,
+        "tType":tType,
+        "stressLevel":stressLevel,
+        "startDate":startDate,
+        "finishDate":finishDate
     })
