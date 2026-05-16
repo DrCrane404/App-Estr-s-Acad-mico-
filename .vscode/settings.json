@@ -1,5 +1,6 @@
 {
     "python.analysis.extraPaths": [
-        "./Frontend/Service"
+        "./Frontend/Service",
+        "./Frontend/Service/CuestionarioInicial"
     ]
 }

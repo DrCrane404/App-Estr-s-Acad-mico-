@@ -173,11 +173,10 @@ tb.Button(
     command=recuperar_contraseña
 ).pack(pady=(0, 12))
 
-# Agrega esta función antes de crear la ventana
+# Abre la pantalla de registro
 def abrir_registro():
-    root.destroy()  # cierra el login
+    root.destroy()
     import subprocess
-    import sys
     subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "Register.py")])
 
 # Enlace a registro 
