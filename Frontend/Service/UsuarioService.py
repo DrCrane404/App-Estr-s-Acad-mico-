@@ -38,3 +38,14 @@ def cambiar_contraseña(email: str, codigo: str, nueva_contraseña: str) -> dict
         "code": codigo,
         "newPassword": nueva_contraseña
     })
+
+# Update llama a UsuarioService.get_by_email() y UsuarioService.update()
+def get_by_email(email):
+    return post("/auth/user", {"email": email})
+
+def update(id, name, username, password):
+    return post(f"/auth/update/{id}", {
+        "name": name,
+        "username": username,
+        "password": password
+    })
