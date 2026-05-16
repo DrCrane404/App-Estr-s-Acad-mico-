@@ -9,33 +9,27 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'Service'))
 import UsuarioService
 
 def buscar_usuario():
-    """Busca el usuario por email y llena los campos"""
-    email = entry_email_buscar.get().strip()
-
-    if not email:
-        messagebox.showwarning("Campo vacío", "Ingresa el correo del usuario a modificar.")
+    token = entry_token.get().strip()
+    if not token:
+        messagebox.showwarning("Campo vacío", "Ingresa tu token de sesión.")
         return
 
-    respuesta = UsuarioService.get_by_email(email)
+    respuesta = UsuarioService.ver_perfil(token)
 
-    if respuesta.get("success") or respuesta.get("id"):
-        # Llenar los campos con los datos actuales
+    if respuesta.get("name") or respuesta.get("username"):
         entry_name.delete(0, "end")
         entry_name.insert(0, respuesta.get("name", ""))
 
         entry_username.delete(0, "end")
         entry_username.insert(0, respuesta.get("username", ""))
 
-        # Guardar el id del usuario para usarlo al actualizar
-        root.usuario_id = respuesta.get("id")
-
+        root.token = token
         messagebox.showinfo("Usuario encontrado", "Puedes modificar los datos.")
     else:
-        messagebox.showerror("Error", "No se encontró un usuario con ese correo.")
+        messagebox.showerror("Error", "Token inválido o sesión expirada.")
 
 
 def actualizar():
-    """Envía los datos modificados al servicio"""
     name     = entry_name.get().strip()
     username = entry_username.get().strip()
     password = entry_password.get().strip()
@@ -53,14 +47,18 @@ def actualizar():
         messagebox.showwarning("Error", "La contraseña debe tener al menos 6 caracteres.")
         return
 
-    usuario_id = getattr(root, "usuario_id", None)
-    if not usuario_id:
-        messagebox.showerror("Error", "Primero busca el usuario a modificar.")
+    token = getattr(root, "token", None)
+    if not token:
+        messagebox.showerror("Error", "Primero busca tu usuario con el token.")
         return
 
-    respuesta = UsuarioService.update(usuario_id, name, username, password)
+    datos = {"name": name, "username": username}
+    if password:
+        datos["password"] = password
 
-    if respuesta.get("success"):
+    respuesta = UsuarioService.actualizar_perfil(datos, token)
+
+    if respuesta.get("success") or respuesta.get("name"):
         messagebox.showinfo("Éxito", "Información actualizada correctamente.")
         root.destroy()
         import subprocess
@@ -103,13 +101,13 @@ tb.Label(
     bootstyle="secondary"
 ).pack(pady=(0, 20))
 
-# Buscar por email 
-tb.Label(frame, text="Correo electrónico", font=("Helvetica", 10)).pack(anchor="w")
+# Buscar por token
+tb.Label(frame, text="Token de sesión", font=("Helvetica", 10)).pack(anchor="w")
 frame_buscar = tb.Frame(frame)
 frame_buscar.pack(fill="x", pady=(4, 16))
 
-entry_email_buscar = tb.Entry(frame_buscar, width=26, font=("Helvetica", 11))
-entry_email_buscar.pack(side="left", ipady=6)
+entry_token = tb.Entry(frame_buscar, width=26, font=("Helvetica", 11))
+entry_token.pack(side="left", ipady=6)
 
 tb.Button(
     frame_buscar,
