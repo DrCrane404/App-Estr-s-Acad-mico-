@@ -8,6 +8,7 @@ import os
 # Importar el servicio (ruta)
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'Service'))
 import UsuarioService
+import sesion
 
 def iniciar_login():
     """Se ejecuta al presionar el botón Entrar"""
@@ -22,7 +23,8 @@ def iniciar_login():
     # Llamar al servicio
     respuesta = UsuarioService.login(email, password)
 
-    if respuesta.get("Success") or respuesta.get("token"):
+    if respuesta.get("token"):
+        sesion.guardar(respuesta["token"])
         messagebox.showinfo("Éxito", "¡Bienvenido!")
         # Aquí se abre la siguiente pantalla y cerrar el login
         root.destroy()
