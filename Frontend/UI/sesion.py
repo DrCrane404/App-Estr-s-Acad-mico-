@@ -9,3 +9,12 @@ def cerrar():
     global token, usuario
     token = None
     usuario = None
+
+def borrar():
+    global token, usuario
+    token = None
+    usuario = None
+
+def obtener():
+    global token
+    return token
