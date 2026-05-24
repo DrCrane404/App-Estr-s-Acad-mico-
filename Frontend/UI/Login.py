@@ -24,13 +24,23 @@ def iniciar_login():
     respuesta = UsuarioService.login(email, password)
 
     if respuesta.get("token"):
-        sesion.guardar(respuesta["token"])
+        token = respuesta["token"]
+        sesion.guardar(token)#token que se utilizara durante toda la sesion
         messagebox.showinfo("Éxito", "¡Bienvenido!")
         # Aquí se abre la siguiente pantalla y cerrar el login
+        # Verificar si ya completó el cuestionario
+        nivel = UsuarioService.obtener_nivel_estres(token)
+
         root.destroy()
+        import subprocess
+        if nivel.get("existe") == False or nivel.get("Success") == False:
+            # No ha completado el cuestionario
+            subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "Cuestionario.py")])
+        else:
+            subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "Menu.py")])
     else:
-        error = respuesta.get("error", "Credenciales incorrectas")
-        messagebox.showerror("Error al iniciar sesión", error)
+        error = respuesta.get("menssage", "Credenciales Incorrectas")
+        messagebox.showerror("Error al iniciar sesion", error)
 
 def recuperar_contraseña():
     """Abre una ventana emergente para recuperar la contraseña en dos pasos."""

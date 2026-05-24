@@ -9,6 +9,8 @@ import json
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'Service'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'Service', 'CuestionarioInicial'))
 from CalculadoraEstres import CalculadoraEstres
+import sesion
+import UsuarioService
 
 # Archivo de progreso 
 ARCHIVO_PROGRESO = os.path.join(os.path.dirname(__file__), '..', 'progreso.json')
@@ -202,6 +204,16 @@ def finalizar(idx):
 def mostrar_resultado():
     resultado = calculadora.calcular_nivel_estres(respuestas)
 
+    # Guardar en el backend
+    token = sesion.obtener()
+    if token:
+        respuesta_api = UsuarioService.guardar_cuestionario_inicial(
+            resultado["puntuacion"],
+            resultado["categoria"],
+            resultado["puntaje_total"],
+            resultado["puntaje_maximo"],
+            token
+        )
     for widget in frame.winfo_children():
         widget.destroy()
 

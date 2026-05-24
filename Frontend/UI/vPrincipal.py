@@ -9,6 +9,7 @@ import string
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'Service'))
 import sesion
+import UsuarioService
 
 # Ventana principal 
 root = tb.Window(themename="superhero")
@@ -18,7 +19,37 @@ root.resizable(False, False)
 root.place_window_center()
 
 tareas = []
+def cargar_tareas_api():
+    global tareas
+    token = sesion.obtener()
+    if not token:
+        return
+    respuesta = UsuarioService.obtener_mis_tareas(token)
+    if isinstance(respuesta, list):
+        tareas.clear()
+        for t in respuesta:
+            tareas.append({
+                "task_id":    t.get("task_id"),
+                "nombre":     t.get("title", ""),
+                "descripcion": t.get("description", ""),
+                "estres":     nivel_numerico_a_texto(t.get("stressLevel", 0)),
+                "publica":    t.get("public", False),
+                "codigo":     t.get("code") or "",
+                "hecha":      t.get("completed", False),
+                "tType":      t.get("tType", "PERSONAL"),
+                "startDate":  t.get("startDate", ""),
+                "finishDate": t.get("finishDate", "")
+            })
 
+#Conversion para el calculo de estres
+def nivel_texto_a_numerico(texto):
+    return {"Bajo": 2, "Moderado": 5, "Alto": 7, "Muy alto": 10}.get(texto, 2)
+
+def nivel_numerico_a_texto(n):
+    if n <= 2: return "Bajo"
+    elif n <= 5: return "Moderado"
+    elif n <= 7: return "Alto"
+    else: return "Muy alto"
 # Utilidades 
 def generar_codigo():
     return "EST-" + "".join(random.choices(string.ascii_uppercase + string.digits, k=3))
@@ -194,9 +225,14 @@ def buscar_tarea_publica():
     if not codigo:
         messagebox.showwarning("Vacío", "Escribe un código para buscar.")
         return
-    resultado = next((t for t in tareas if t.get("codigo") == codigo and t.get("publica")), None)
-    if resultado:
-        ver_tarea_publica(resultado)
+    token = sesion.obtener()
+    respuesta = UsuarioService.unirse_tarea(codigo, token)
+    if respuesta.get("task_id"):
+        messagebox.showinfo("¡Unido!", f"Te uniste a la tarea: {respuesta.get('title')}")
+        cargar_tareas_api()
+        refrescar_tareas()
+        refrescar_publicas()
+        actualizar_barra_estres()
     else:
         messagebox.showerror("No encontrada", "No existe una tarea pública con ese código.")
 
@@ -225,7 +261,7 @@ def agregar_tarea_ui(tarea_existente=None, indice=None):
 
     ventana = tb.Toplevel(root)
     ventana.title("Editar tarea" if es_edicion else "Nueva tarea")
-    ventana.geometry("400x540")
+    ventana.geometry("400x600")
     ventana.resizable(False, False)
     ventana.place_window_center()
     ventana.grab_set()
@@ -262,6 +298,14 @@ def agregar_tarea_ui(tarea_existente=None, indice=None):
     colores  = ["success", "info", "warning", "danger"]
     nivel_sel = tb.StringVar(value=tarea_existente.get("estres", "Bajo") if es_edicion else "Bajo")
 
+    tb.Label(frame, text="Tipo de actividad", font=("Helvetica", 11)).pack(anchor="w")
+    frame_tipos = tb.Frame(frame)
+    frame_tipos.pack(fill="x", pady=(4, 10))
+
+    tipo_sel = tb.StringVar(value=tarea_existente.get("tType", "ACADEMIA") if es_edicion else "ACADEMIA")
+    tb.Radiobutton(frame_tipos, text="Académica", variable=tipo_sel, value="ACADEMIA", bootstyle="info").pack(side="left", padx=6)
+    tb.Radiobutton(frame_tipos, text="Recreativa", variable=tipo_sel, value="RECREATIVA", bootstyle="success").pack(side="left", padx=6)
+
     for nivel, color in zip(niveles, colores):
         tb.Radiobutton(frame_niveles, text=nivel, variable=nivel_sel, value=nivel, bootstyle=color).pack(side="left", padx=6)
 
@@ -297,30 +341,47 @@ def agregar_tarea_ui(tarea_existente=None, indice=None):
             messagebox.showwarning("Campo vacío", "Escribe el nombre de la tarea.", parent=ventana)
             return
 
-        tarea = {
-            "nombre": nombre,
-            "descripcion": desc,
-            "horas": horas,
-            "estres": nivel,
-            "publica": publica,
-            "codigo": codigo,
-            "hecha": tarea_existente["hecha"] if es_edicion else False
-        }
+        token = sesion.obtener()
+        from datetime import date
+        hoy = str(date.today())
 
         if es_edicion:
-            tareas[indice] = tarea
+            respuesta = UsuarioService.actualizar_tarea(tarea_existente["task_id"], {
+                "title": nombre,
+                "description": desc,
+                "stressLevel": nivel_texto_a_numerico(nivel),
+                "public": publica,
+                "code": codigo
+            }, token)
+            if respuesta.get("task_id") or respuesta.get("title"):
+                messagebox.showinfo("Éxito", "Tarea actualizada.", parent=ventana)
+            else:
+                messagebox.showerror("Error", respuesta.get("message", "No se pudo actualizar."), parent=ventana)
+                return
         else:
-            tareas.append(tarea)
-
-        if publica and codigo and not es_edicion:
-            messagebox.showinfo("Tarea pública", f"Código de acceso: {codigo}\n\nCompártelo con quien quieras.", parent=ventana)
+            respuesta = UsuarioService.crear_tarea({
+                "title": nombre,
+                "description": desc or "Sin descripción",
+                "stressLevel": nivel_texto_a_numerico(nivel),
+                "tType": tipo_sel.get(),
+                "startDate": hoy,
+                "finishDate": hoy,
+                "public": publica,
+                "code": codigo
+            }, token)
+            if respuesta.get("task_id"):
+                if publica and codigo:
+                    messagebox.showinfo("Tarea pública", f"Código de acceso: {codigo}\n\nCompártelo con quien quieras.", parent=ventana)
+            else:
+                messagebox.showerror("Error", respuesta.get("message", "No se pudo crear la tarea."), parent=ventana)
+                return
 
         ventana.destroy()
+        cargar_tareas_api()
         refrescar_tareas()
         refrescar_publicas()
         actualizar_barra_estres()
-
-    tb.Button(frame, text="Guardar cambios" if es_edicion else "Guardar tarea", bootstyle="success", width=22, command=guardar).pack(pady=(14, 0))
+    tb.Button(frame, text="Guardar cambios" if es_edicion else "Guardar tarea", bootstyle="success", width=22, command=guardar).pack(pady=(14, 10), side="bottom")
 
 # Refrescar tareas 
 def refrescar_tareas(filtro=""):
@@ -346,6 +407,8 @@ def refrescar_tareas(filtro=""):
         var = tb.BooleanVar(value=tarea["hecha"])
 
         def marcar(i=i, var=var):
+            token = sesion.obtener()
+            UsuarioService.completar_tarea(tareas[i]["task_id"], token)
             tareas[i]["hecha"] = var.get()
             actualizar_barra_estres()
             refrescar_tareas(filtro)
@@ -372,12 +435,17 @@ def refrescar_tareas(filtro=""):
 
 def eliminar_tarea(i):
     if messagebox.askyesno("Eliminar", f"¿Eliminar '{tareas[i]['nombre']}'?"):
-        tareas.pop(i)
+        token = sesion.obtener()
+        print("TASK ID:", tareas[i].get("task_id"))
+        respuesta = UsuarioService.eliminar_tarea(tareas[i]["task_id"], token)
+        print("RESPUESTA:", respuesta)
+        cargar_tareas_api()
         refrescar_tareas()
         refrescar_publicas()
         actualizar_barra_estres()
 
-# Iniciar
+#INICIAR
+cargar_tareas_api()
 refrescar_tareas()
 refrescar_publicas()
 actualizar_barra_estres()

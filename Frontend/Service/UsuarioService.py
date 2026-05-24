@@ -12,7 +12,7 @@ def post(endpoint, data):
     
 def get_auth(endpoint, token):
     try:
-        response = requests.get(f"{BASE_URL}{endpoint}", headers={"Authorization": f"Bearer{token}"})
+        response = requests.get(f"{BASE_URL}{endpoint}", headers={"Authorization": f"Bearer {token}"})
         return response.json()
     except Exception as e:
         return{
@@ -90,3 +90,52 @@ def update(id, name, username, password):
         "username": username,
         "password": password
     })
+
+#----------------------TAREAS-----------------------------
+def post_auth(endpoint, data, token):
+    try:
+        response = requests.post(
+            f"{BASE_URL}{endpoint}",
+            json=data,
+            headers={"Authorization": f"Bearer {token}"}
+        )
+        return response.json()
+    except Exception as e:
+        return {"Success": False, "error": str(e)}
+
+# Tareas
+def crear_tarea(data: dict, token: str) -> dict:
+    return post_auth("/task", data, token)
+
+def obtener_mis_tareas(token: str) -> dict:
+    return get_auth("/task/own", token)
+
+def obtener_tarea(task_id: int, token: str) -> dict:
+    return get_auth(f"/task/{task_id}", token)
+
+def actualizar_tarea(task_id: int, data: dict, token: str) -> dict:
+    return patch_auth(f"/task/{task_id}", data, token)
+
+def completar_tarea(task_id: int, token: str) -> dict:
+    return patch_auth(f"/task/complete/{task_id}", {}, token)
+
+def eliminar_tarea(task_id: int, token: str) -> dict:
+    return delete_auth(f"/task/{task_id}", token)
+
+def obtener_tareas_publicas(token: str) -> dict:
+    return get_auth("/task/public", token)
+
+def unirse_tarea(code: str, token: str) -> dict:
+    return post_auth("/task/join", {"code": code}, token)
+
+#-----------------Cuestionario y nivel de estres -----------------------------
+def guardar_cuestionario_inicial(puntuacion, categoria, puntaje_total, puntaje_maximo, token):
+    return post_auth("/stress-level/inicial", {
+        "puntuacion": puntuacion,
+        "categoria": categoria,
+        "puntajeTotal": puntaje_total,
+        "puntajeMaximo": puntaje_maximo
+    }, token)
+
+def obtener_nivel_estres(token):
+    return get_auth("/stress-level/nivel", token)

@@ -11,7 +11,7 @@ import sesion
 
 root = tb.Window(themename="superhero")
 root.title("Mi Perfil")
-root.geometry("500x620")
+root.geometry("500x800")
 root.resizable(False, False)
 root.place_window_center()
 

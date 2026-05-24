@@ -1,20 +1,19 @@
-token = None
-usuario = None
+# sesion.py
+import tempfile, os
 
-def guardar (token_recibido):
-    global token, usuario
-    token = token_recibido
+_ruta = os.path.join(tempfile.gettempdir(), "estres_sesion.txt")
 
-def cerrar():
-    global token, usuario
-    token = None
-    usuario = None
-
-def borrar():
-    global token, usuario
-    token = None
-    usuario = None
+def guardar(token_recibido):
+    with open(_ruta, "w") as f:
+        f.write(token_recibido)
 
 def obtener():
-    global token
-    return token
+    try:
+        with open(_ruta, "r") as f:
+            return f.read().strip()
+    except FileNotFoundError:
+        return None
+
+def cerrar():
+    if os.path.exists(_ruta):
+        os.remove(_ruta)
