@@ -74,6 +74,8 @@ def recuperar_contraseña():
     entry_nueva = tb.Entry(frame_paso2, width=30, font=("Helvetica", 11), show="●")
     entry_nueva.pack(pady=(4, 16), ipady=5)
 
+    
+
     def enviar_codigo():
         email = entry_rec_email.get().strip()
         if not email:
@@ -120,6 +122,16 @@ def recuperar_contraseña():
     # Este botón se agrega al frame pero se muestra solo en el paso 2
     btn_confirmar = tb.Button(frame, text="Cambiar contraseña", bootstyle="success", width=26, command=confirmar_cambio)
 
+    #Regresar a login
+    lbl_volver = tb.Label(
+        frame,
+        text="← Volver al inicio de sesión",
+        bootstyle="info",
+        cursor="hand2",
+        font=("Helvetica", 9, "underline")
+    )
+    lbl_volver.pack(pady=(16, 0))
+    lbl_volver.bind("<Button-1>", lambda e: ventana.destroy())
 
 #Ventana principal 
 root = tb.Window(themename="superhero")

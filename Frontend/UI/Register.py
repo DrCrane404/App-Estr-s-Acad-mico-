@@ -108,20 +108,20 @@ tb.Button(
 ).pack(pady=(0, 12))
 
 # Función para abrir la pantalla de modificar
-def abrir_modificar():
-    root.destroy()
-    import subprocess
-    import sys
-    subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "Update.py")])
+# def abrir_modificar():
+    # root.destroy()
+    # import subprocess
+    # import sys
+    # subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "Update.py")])
 
 # Botón modificar
-tb.Button(
-    frame,
-    text="Modificar información",
-    bootstyle="warning",
-    width=30,
-    command=abrir_modificar
-).pack(pady=(0, 12))
+# tb.Button(
+    # frame,
+    # text="Modificar información",
+    # bootstyle="warning",
+    # width=30,
+    # command=abrir_modificar
+# ).pack(pady=(0, 12))
 
 # Función para volver al login
 def abrir_login():

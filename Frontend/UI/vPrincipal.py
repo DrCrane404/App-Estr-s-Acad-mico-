@@ -188,16 +188,11 @@ tb.Separator(frame_derecho).pack(fill="x", pady=8)
 
 tb.Label(frame_derecho, text="Tareas públicas", font=("Helvetica", 12, "bold"), bootstyle="info").pack(anchor="w", pady=(0, 8))
 
-frame_buscar_pub = tb.Frame(frame_derecho)
-frame_buscar_pub.pack(fill="x", pady=(0, 8))
-
-entry_codigo = tb.Entry(frame_buscar_pub, width=14, font=("Helvetica", 11))
-entry_codigo.pack(side="left", ipady=4)
-
+# PANEL DERECHO -- Tareas publicas
 def ver_tarea_publica(tarea):
     ventana = tb.Toplevel(root)
     ventana.title("Tarea pública")
-    ventana.geometry("420x380")
+    ventana.geometry("420x460")
     ventana.resizable(False, False)
     ventana.place_window_center()
 
@@ -216,36 +211,75 @@ def ver_tarea_publica(tarea):
     frame_info = tb.Frame(frame)
     frame_info.pack(fill="x", pady=(0, 12))
 
-    tb.Label(frame_info, text=f"⏱ Horas/día: {tarea.get('horas', '-')}", font=("Helvetica", 11)).pack(side="left", padx=(0, 20))
-
     colores = {"Bajo": "success", "Moderado": "info", "Alto": "warning", "Muy alto": "danger"}
     estilo = colores.get(tarea.get("estres", "Bajo"), "secondary")
+    tb.Label(frame_info, text=f"⏱ Horas/día: {tarea.get('horas', '-')}", font=("Helvetica", 11)).pack(side="left", padx=(0, 20))
     tb.Label(frame_info, text=f"😰 Estrés: {tarea.get('estres', '-')}", font=("Helvetica", 11), bootstyle=estilo).pack(side="left")
 
     tb.Separator(frame).pack(fill="x", pady=8)
-    tb.Label(frame, text=f"Código: {tarea.get('codigo', '')}", font=("Helvetica", 10), bootstyle="warning").pack(anchor="w", pady=(0, 16))
-    tb.Button(frame, text="Cerrar", bootstyle="secondary", width=16, command=ventana.destroy).pack()
+
+    # Pedir código para unirse — NO muestra el código de la tarea
+    tb.Label(frame, text="Ingresa el código para unirte:", font=("Helvetica", 10)).pack(anchor="w")
+    entry_codigo_unirse = tb.Entry(frame, width=20, font=("Helvetica", 11))
+    entry_codigo_unirse.pack(anchor="w", pady=(4, 16), ipady=4)
+
+    def unirse():
+        codigo_ingresado = entry_codigo_unirse.get().strip().upper()
+        if not codigo_ingresado:
+            messagebox.showwarning("Vacío", "Ingresa el código de acceso.", parent=ventana)
+            return
+        token = sesion.obtener()
+        respuesta = UsuarioService.unirse_tarea(codigo_ingresado, token)
+        if respuesta.get("task_id"):
+            messagebox.showinfo("¡Unido!", f"Te uniste a '{tarea['nombre']}' correctamente.")
+            ventana.destroy()
+            cargar_tareas_api()
+            refrescar_tareas()
+            actualizar_barra_estres()
+        else:
+            error = respuesta.get("message", "Código incorrecto o tarea no encontrada.")
+            messagebox.showerror("Error", error, parent=ventana)
+
+    frame_botones = tb.Frame(frame)
+    frame_botones.pack(fill="x")
+    tb.Button(frame_botones, text="Unirse", bootstyle="success", width=16, command=unirse).pack(side="left", padx=(0, 8))
+    tb.Button(frame_botones, text="Cerrar", bootstyle="secondary", width=10, command=ventana.destroy).pack(side="left")
+
+#Mostrar resultados de buscar las tareas publicas por nombre
+def mostrar_resultados_publicos(resultados):
+    ventana = tb.Toplevel(root)
+    ventana.title("Resultados")
+    ventana.geometry("420x400")
+    ventana.resizable(False, False)
+    ventana.place_window_center()
+
+    frame = tb.Frame(ventana, padding=20)
+    frame.pack(fill="both", expand=True)
+
+    tb.Label(frame, text="Tareas encontradas", font=("Helvetica", 14, "bold"), bootstyle="info").pack(pady=(0, 16))
+
+    for t in resultados:
+        frame_t = tb.Frame(frame, bootstyle="dark", padding=10)
+        frame_t.pack(fill="x", pady=6)
+        tb.Label(frame_t, text=f"🌐 {t['nombre']}", font=("Helvetica", 12, "bold")).pack(anchor="w")
+        tb.Label(frame_t, text=f"😰 Estrés: {t.get('estres', '-')}  ⏱ {t.get('horas', '-')}h/día", font=("Helvetica", 10), bootstyle="secondary").pack(anchor="w", pady=(2, 6))
+        tb.Button(
+            frame_t,
+            text="Ver y unirse",
+            bootstyle="info-outline",
+            command=lambda t=t: [ventana.destroy(), ver_tarea_publica(t)]
+        ).pack(anchor="e")
 
 def buscar_tarea_publica():
-    codigo = entry_codigo.get().strip().upper()
-    if not codigo:
-        messagebox.showwarning("Vacío", "Escribe un código para buscar.")
+    nombre = entry_codigo.get().strip().lower()
+    if not nombre:
+        messagebox.showwarning("Vacío", "Escribe el nombre de la tarea a buscar.")
         return
-    token = sesion.obtener()
-    respuesta = UsuarioService.unirse_tarea(codigo, token)
-    if respuesta.get("task_id"):
-        messagebox.showinfo("¡Unido!", f"Te uniste a la tarea: {respuesta.get('title')}")
-        cargar_tareas_api()
-        refrescar_tareas()
-        refrescar_publicas()
-        actualizar_barra_estres()
+    resultados = [t for t in tareas if t.get("publica") and nombre in t["nombre"].lower()]
+    if resultados:
+        mostrar_resultados_publicos(resultados)
     else:
-        messagebox.showerror("No encontrada", "No existe una tarea pública con ese código.")
-
-tb.Button(frame_buscar_pub, text="Buscar", bootstyle="info", command=buscar_tarea_publica).pack(side="left", padx=(8, 0))
-
-frame_lista_publica = tb.Frame(frame_derecho)
-frame_lista_publica.pack(fill="both", expand=True)
+        messagebox.showerror("No encontrada", "No existe una tarea pública con ese nombre.")
 
 def refrescar_publicas():
     for widget in frame_lista_publica.winfo_children():
@@ -257,8 +291,29 @@ def refrescar_publicas():
     for t in publicas:
         frame_pub = tb.Frame(frame_lista_publica)
         frame_pub.pack(fill="x", pady=3)
-        tb.Label(frame_pub, text=f"🌐 {t['nombre']}  [{t['codigo']}]", font=("Helvetica", 11), bootstyle="info").pack(side="left")
-        tb.Button(frame_pub, text="Ver", bootstyle="info-outline", command=lambda t=t: ver_tarea_publica(t)).pack(side="right")
+        # Solo muestra el nombre, sin el código
+        tb.Label(frame_pub, text=f"🌐 {t['nombre']}", font=("Helvetica", 11), bootstyle="info").pack(side="left")
+        tb.Button(
+            frame_pub,
+            text="Ver código",
+            bootstyle="warning-outline",
+            command=lambda t=t: messagebox.showinfo("Tu código", f"Código: {t['codigo']}\n\nCompártelo solo con quien quieras.")
+        ).pack(side="right")
+
+
+frame_buscar_pub = tb.Frame(frame_derecho)
+frame_buscar_pub.pack(fill="x", pady=(0, 8))
+
+entry_codigo = tb.Entry(frame_buscar_pub, width=14, font=("Helvetica", 11))
+entry_codigo.pack(side="left", ipady=4)
+
+entry_codigo = tb.Entry(frame_buscar_pub, width=14, font=("Helvetica", 11))
+entry_codigo.pack(side="left", ipady=4)
+
+tb.Button(frame_buscar_pub, text="Buscar", bootstyle="info", command=buscar_tarea_publica).pack(side="left", padx=(8, 0))
+
+frame_lista_publica = tb.Frame(frame_derecho)
+frame_lista_publica.pack(fill="both", expand=True)
 
 
 # Formulario agregar/editar 
