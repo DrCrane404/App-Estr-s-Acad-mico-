@@ -63,7 +63,13 @@ def calcular_estres_tareas():
     return min(round(total / len(tareas_activas), 1), 10)
 
 def actualizar_barra_estres():
-    nivel = calcular_estres_tareas()
+    token = sesion.obtener()
+    if token:
+        respuesta = UsuarioService.obtener_nivel_estres(token)
+        nivel = respuesta.get("nivelFinal",0) if respuesta.get("existe") else 0
+    else:
+        nivel = 0
+
     barra_estres["value"] = nivel * 10
     if nivel <= 2.5:
         categoria, estilo = "Bajo", "success"
