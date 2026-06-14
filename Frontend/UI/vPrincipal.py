@@ -2,6 +2,8 @@
 import ttkbootstrap as tb
 from ttkbootstrap.constants import *
 from tkinter import messagebox
+from datetime import date, timedelta
+import calendar as cal_module
 import sys
 import os
 import random
@@ -53,6 +55,66 @@ def nivel_numerico_a_texto(n):
 # Utilidades 
 def generar_codigo():
     return "EST-" + "".join(random.choices(string.ascii_uppercase + string.digits, k=3))
+
+# calendario
+def calcular_horas_por_dia():
+    """Devuelve un diccionario {fecha: horas_totales} sumando todas las tareas activas"""
+    horas_por_dia = {}
+
+    for tarea in tareas:
+        if tarea["hecha"]:
+            continue
+        try:
+            inicio = date.fromisoformat(str(tarea.get("startDate", ""))[:10])
+            fin = date.fromisoformat(str(tarea.get("finishDate", ""))[:10])
+            horas = float(tarea.get("horas", 0) or 0)
+        except (ValueError, TypeError):
+            continue
+
+        dia_actual = inicio
+        while dia_actual <= fin:
+            horas_por_dia[dia_actual] = horas_por_dia.get(dia_actual, 0) + horas
+            dia_actual += timedelta(days=1)
+
+    return horas_por_dia
+
+
+def verificar_alerta_horario(inicio_str, fin_str, horas_nuevas, excluir_task_id=None):
+    """Verifica si una tarea hace que algún día supere las 16 horas"""
+    try:
+        inicio = date.fromisoformat(inicio_str[:10])
+        fin = date.fromisoformat(fin_str[:10])
+        horas_nuevas = float(horas_nuevas or 0)
+    except (ValueError, TypeError):
+        return None
+
+    # Calcular horas existentes, excluyendo la tarea que se está editando
+    horas_por_dia = {}
+    for tarea in tareas:
+        if tarea["hecha"]:
+            continue
+        if excluir_task_id and tarea.get("task_id") == excluir_task_id:
+            continue
+        try:
+            t_inicio = date.fromisoformat(str(tarea.get("startDate", ""))[:10])
+            t_fin = date.fromisoformat(str(tarea.get("finishDate", ""))[:10])
+            t_horas = float(tarea.get("horas", 0) or 0)
+        except (ValueError, TypeError):
+            continue
+        dia_actual = t_inicio
+        while dia_actual <= t_fin:
+            horas_por_dia[dia_actual] = horas_por_dia.get(dia_actual, 0) + t_horas
+            dia_actual += timedelta(days=1)
+
+    dias_en_peligro = []
+    dia_actual = inicio
+    while dia_actual <= fin:
+        total = horas_por_dia.get(dia_actual, 0) + horas_nuevas
+        if total > 16:
+            dias_en_peligro.append((dia_actual, total))
+        dia_actual += timedelta(days=1)
+
+    return dias_en_peligro if dias_en_peligro else None
 
 def calcular_estres_tareas():
     pesos = {"Bajo": 2, "Moderado": 4, "Alto": 7, "Muy alto": 10}
@@ -125,15 +187,20 @@ frame_top.place(x=0, y=0, width=1100, height=55)
 
 tb.Button(frame_top, text="☰", bootstyle="success", width=3, command=toggle_menu).place(x=10, y=10)
 
-entry_busqueda = tb.Entry(frame_top, width=40, font=("Helvetica", 11))
+entry_busqueda = tb.Entry(frame_top, width=35, font=("Helvetica", 11))
 entry_busqueda.place(x=70, y=13, height=30)
 
 def buscar(texto):
     refrescar_tareas(filtro=texto.strip().lower())
 
+#boton buscar
 tb.Button(frame_top, text="🔍", bootstyle="secondary", command=lambda: buscar(entry_busqueda.get())).place(x=350, y=10)
 entry_busqueda.bind("<Return>", lambda e: buscar(entry_busqueda.get()))
 
+#boton calendario
+tb.Button(frame_top, text="📅", bootstyle="info", width=3, command=lambda: abrir_calendario()).place(x=990, y=10)
+
+#boton perfil
 tb.Button(frame_top, text="👤", bootstyle="warning", width=3, command=abrir_perfil).place(x=1050, y=10)
 
 # Área principal 
@@ -244,6 +311,112 @@ def ver_tarea_publica(tarea):
     frame_botones.pack(fill="x")
     tb.Button(frame_botones, text="Unirse", bootstyle="success", width=16, command=unirse).pack(side="left", padx=(0, 8))
     tb.Button(frame_botones, text="Cerrar", bootstyle="secondary", width=10, command=ventana.destroy).pack(side="left")
+    
+def abrir_calendario():
+    ventana = tb.Toplevel(root)
+    ventana.title("Calendario de carga de horas")
+    ventana.geometry("520x540")
+    ventana.resizable(False, False)
+    ventana.place_window_center()
+        
+    frame = tb.Frame(ventana, padding=20)
+    frame.pack(fill="both", expand=True)
+        
+    hoy = date.today()
+    mes_actual = [hoy.month]
+    anio_actual = [hoy.year]
+        
+    tb.Label(frame, text="📅 Calendario de horas asignadas", font=("Helvetica", 14, "bold"), bootstyle="info").pack(pady=(0, 8))
+        
+    lbl_mes = tb.Label(frame, text="", font=("Helvetica", 12, "bold"))
+    lbl_mes.pack(pady=(0, 12))
+
+    frame_dias = tb.Frame(frame)
+    frame_dias.pack()
+
+    frame_leyenda = tb.Frame(frame)
+    frame_leyenda.pack(pady=(12, 0))
+
+    tb.Label(frame_leyenda, text="🟩 Normal (≤16h)", font=("Helvetica", 9), bootstyle="success").pack(side="left", padx=8)
+    tb.Label(frame_leyenda, text="🟥 Sueño en peligro (>16h)", font=("Helvetica", 9), bootstyle="danger").pack(side="left", padx=8)
+    tb.Label(frame_leyenda, text="⬜ Sin tareas", font=("Helvetica", 9), bootstyle="secondary").pack(side="left", padx=8)
+
+def dibujar_mes():
+    for widget in frame_dias.winfo_children():
+        widget.destroy()
+        
+        lbl_mes.config(text=f"{cal_module.month_name[mes_actual[0]].capitalize()} {anio_actual[0]}")
+
+        horas_por_dia = calcular_horas_por_dia()
+
+        dias_semana = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
+        for i, d in enumerate(dias_semana):
+            tb.Label(frame_dias, text=d, font=("Helvetica", 10, "bold"), width=6, anchor="center").grid(row=0, column=i, padx=2, pady=2)
+
+        cal_dias = cal_module.monthcalendar(anio_actual[0], mes_actual[0])
+
+        for fila_idx, semana in enumerate(cal_dias, start=1):
+            for col_idx, dia in enumerate(semana):
+                if dia == 0:
+                    continue
+
+                fecha = date(anio_actual[0], mes_actual[0], dia)
+                horas = horas_por_dia.get(fecha, 0)
+
+                if horas > 16:
+                    estilo = "danger"
+                elif horas > 0:
+                    estilo = "success"
+                else:
+                    estilo = "secondary-outline"
+
+                texto = f"{dia}"
+                if horas > 0:
+                    texto += f"\n{horas:.1f}h"
+
+                tb.Button(
+                    frame_dias,
+                    text=texto,
+                    bootstyle=estilo,
+                    width=6,
+                    command=lambda f=fecha, h=horas: ver_detalle_dia(f, h)
+                ).grid(row=fila_idx, column=col_idx, padx=2, pady=2)
+
+    def ver_detalle_dia(fecha, horas):
+        if horas > 16:
+            messagebox.showwarning(
+                "⚠️ Sueño en peligro",
+                f"El {fecha.strftime('%d/%m/%Y')} tienes {horas:.1f} horas de tareas asignadas.\n\n"
+                f"Esto supera las 16 horas recomendadas y deja menos de 8 horas para dormir."
+            )
+        elif horas > 0:
+            messagebox.showinfo("Día con tareas", f"El {fecha.strftime('%d/%m/%Y')} tienes {horas:.1f} horas de tareas asignadas.")
+        else:
+            messagebox.showinfo("Sin tareas", f"El {fecha.strftime('%d/%m/%Y')} no tienes tareas asignadas.")
+
+    def mes_anterior():
+        if mes_actual[0] == 1:
+            mes_actual[0] = 12
+            anio_actual[0] -= 1
+        else:
+            mes_actual[0] -= 1
+        dibujar_mes()
+
+    def mes_siguiente():
+        if mes_actual[0] == 12:
+            mes_actual[0] = 1
+            anio_actual[0] += 1
+        else:
+            mes_actual[0] += 1
+        dibujar_mes()
+
+    frame_nav = tb.Frame(frame)
+    frame_nav.pack(pady=(8, 0))
+    tb.Button(frame_nav, text="← Mes anterior", bootstyle="secondary-outline", command=mes_anterior).pack(side="left", padx=4)
+    tb.Button(frame_nav, text="Mes siguiente →", bootstyle="secondary-outline", command=mes_siguiente).pack(side="left", padx=4)
+
+    dibujar_mes()
+
 
 #Mostrar resultados de buscar las tareas publicas por nombre
 def mostrar_resultados_publicos(resultados):
@@ -307,9 +480,6 @@ frame_buscar_pub.pack(fill="x", pady=(0, 8))
 entry_codigo = tb.Entry(frame_buscar_pub, width=14, font=("Helvetica", 11))
 entry_codigo.pack(side="left", ipady=4)
 
-entry_codigo = tb.Entry(frame_buscar_pub, width=14, font=("Helvetica", 11))
-entry_codigo.pack(side="left", ipady=4)
-
 tb.Button(frame_buscar_pub, text="Buscar", bootstyle="info", command=buscar_tarea_publica).pack(side="left", padx=(8, 0))
 
 frame_lista_publica = tb.Frame(frame_derecho)
@@ -350,6 +520,30 @@ def agregar_tarea_ui(tarea_existente=None, indice=None):
     if es_edicion and tarea_existente.get("horas"):
         entry_horas.delete(0, "end")
         entry_horas.insert(0, tarea_existente["horas"])
+
+    # Fechas 
+    frame_fechas = tb.Frame(frame)
+    frame_fechas.pack(fill="x", pady=(0, 10))
+        
+    frame_fecha_inicio = tb.Frame(frame_fechas)
+    frame_fecha_inicio.pack(side="left", padx=(0, 10))
+    tb.Label(frame_fecha_inicio, text="Fecha de inicio", font=("Helvetica", 11)).pack(anchor="w")
+    entry_fecha_inicio = tb.DateEntry(frame_fecha_inicio, width=12, dateformat="%Y-%m-%d")
+    entry_fecha_inicio.pack(pady=(4, 0))
+        
+    frame_fecha_fin = tb.Frame(frame_fechas)
+    frame_fecha_fin.pack(side="left")
+    tb.Label(frame_fecha_fin, text="Fecha de fin", font=("Helvetica", 11)).pack(anchor="w")
+    entry_fecha_fin = tb.DateEntry(frame_fecha_fin, width=12, dateformat="%Y-%m-%d")
+    entry_fecha_fin.pack(pady=(4, 0))
+        
+    if es_edicion:
+        if tarea_existente.get("startDate"):
+            entry_fecha_inicio.entry.delete(0, "end")
+            entry_fecha_inicio.entry.insert(0, str(tarea_existente["startDate"])[:10])
+        if tarea_existente.get("finishDate"):
+            entry_fecha_fin.entry.delete(0, "end")
+            entry_fecha_fin.entry.insert(0, str(tarea_existente["finishDate"])[:10])
 
     tb.Label(frame, text="Nivel de estrés que genera", font=("Helvetica", 11)).pack(anchor="w")
     frame_niveles = tb.Frame(frame)
@@ -397,13 +591,22 @@ def agregar_tarea_ui(tarea_existente=None, indice=None):
         nivel   = nivel_sel.get()
         publica = es_publica.get()
         codigo  = codigo_actual[0] if publica else None
-
+        fecha_inicio = entry_fecha_inicio.entry.get().strip()
+        fecha_fin = entry_fecha_fin.entry.get().strip()
+        
         if not nombre:
             messagebox.showwarning("Campo vacío", "Escribe el nombre de la tarea.", parent=ventana)
             return
 
+        if not fecha_inicio or not fecha_fin:
+            messagebox.showwarning("Campo vacío", "Selecciona las fechas de inicio y fin.", parent=ventana)
+            return
+
+        if date.fromisoformat(fecha_inicio) > date.fromisoformat(fecha_fin):
+            messagebox.showwarning("Fechas inválidas", "La fecha de fin debe ser igual o posterior a la de inicio.", parent=ventana)
+            return
+
         token = sesion.obtener()
-        from datetime import date
         hoy = str(date.today())
 
         if es_edicion:
@@ -425,8 +628,9 @@ def agregar_tarea_ui(tarea_existente=None, indice=None):
                 "description": desc or "Sin descripción",
                 "stressLevel": nivel_texto_a_numerico(nivel),
                 "tType": tipo_sel.get(),
-                "startDate": hoy,
-                "finishDate": hoy,
+                "startDate": fecha_inicio,
+                "finishDate": fecha_fin,
+                "hoursPerDay": float(horas),
                 "public": publica,
                 "code": codigo
             }, token)
@@ -436,6 +640,19 @@ def agregar_tarea_ui(tarea_existente=None, indice=None):
             else:
                 messagebox.showerror("Error", respuesta.get("message", "No se pudo crear la tarea."), parent=ventana)
                 return
+
+        # Verificar alerta de horario
+        task_id_actual = tarea_existente.get("task_id") if es_edicion else None
+        dias_peligro = verificar_alerta_horario(fecha_inicio, fecha_fin, horas, excluir_task_id=task_id_actual)
+
+        if dias_peligro:
+            dias_texto = "\n".join([f"  • {d.strftime('%d/%m/%Y')}: {h:.1f}h totales" for d, h in dias_peligro])
+            messagebox.showwarning(
+                "⚠️ Horario en peligro",
+                f"Con esta tarea, los siguientes días superan las 16 horas:\n\n{dias_texto}\n\n"
+                f"Esto deja menos de 8 horas para dormir. Considera ajustar horas o fechas.",
+                parent=ventana
+            )
 
         ventana.destroy()
         cargar_tareas_api()
