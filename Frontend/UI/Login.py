@@ -26,11 +26,18 @@ def iniciar_login():
     if respuesta.get("token"):
         token = respuesta["token"]
         sesion.guardar(token)#token que se utilizara durante toda la sesion
+
+        print("TOKEN GUARDADO:", sesion.obtener())
+
+
         messagebox.showinfo("Éxito", "¡Bienvenido!")
         # Aquí se abre la siguiente pantalla y cerrar el login
         # Verificar si ya completó el cuestionario
         nivel = UsuarioService.obtener_nivel_estres(token)
 
+        print("NIVEL ESTRES:", nivel)
+
+        
         root.destroy()
         import subprocess
         if nivel.get("existe") == False or nivel.get("Success") == False:

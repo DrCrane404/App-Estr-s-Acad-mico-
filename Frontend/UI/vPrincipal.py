@@ -58,24 +58,24 @@ def generar_codigo():
 
 # calendario
 def calcular_horas_por_dia():
-    """Devuelve un diccionario {fecha: horas_totales} sumando todas las tareas activas"""
+    """Regresa un diccionario {fecha: horas_totales} sumando horasDia de cada tarea activa por cada día entre su inicio y fin"""
+    token = sesion.obtener()
+    respuesta = UsuarioService.obtener_mis_tareas(token)
+    
     horas_por_dia = {}
-
-    for tarea in tareas:
-        if tarea["hecha"]:
-            continue
-        try:
-            inicio = date.fromisoformat(str(tarea.get("startDate", ""))[:10])
-            fin = date.fromisoformat(str(tarea.get("finishDate", ""))[:10])
-            horas = float(tarea.get("horas", 0) or 0)
-        except (ValueError, TypeError):
-            continue
-
-        dia_actual = inicio
-        while dia_actual <= fin:
-            horas_por_dia[dia_actual] = horas_por_dia.get(dia_actual, 0) + horas
-            dia_actual += timedelta(days=1)
-
+    if isinstance(respuesta, list):
+        for t in respuesta:
+            if t.get("completed"):
+                continue
+            horas_dia = t.get("horasDia", 0)
+            inicio = date.fromisoformat(t["startDate"][:10])
+            fin = date.fromisoformat(t["finishDate"][:10])
+            
+            actual = inicio
+            while actual <= fin:
+                horas_por_dia[actual] = horas_por_dia.get(actual, 0) + horas_dia
+                actual += timedelta(days=1)
+    
     return horas_por_dia
 
 
@@ -160,7 +160,6 @@ def toggle_menu():
         menu_visible[0] = True
 
 def abrir_perfil():
-    toggle_menu()
     import subprocess
     subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "vPerfil.py")])
 
@@ -341,10 +340,10 @@ def abrir_calendario():
     tb.Label(frame_leyenda, text="🟥 Sueño en peligro (>16h)", font=("Helvetica", 9), bootstyle="danger").pack(side="left", padx=8)
     tb.Label(frame_leyenda, text="⬜ Sin tareas", font=("Helvetica", 9), bootstyle="secondary").pack(side="left", padx=8)
 
-def dibujar_mes():
-    for widget in frame_dias.winfo_children():
-        widget.destroy()
-        
+    def dibujar_mes():
+        for widget in frame_dias.winfo_children():
+            widget.destroy()
+            
         lbl_mes.config(text=f"{cal_module.month_name[mes_actual[0]].capitalize()} {anio_actual[0]}")
 
         horas_por_dia = calcular_horas_por_dia()
@@ -492,7 +491,7 @@ def agregar_tarea_ui(tarea_existente=None, indice=None):
 
     ventana = tb.Toplevel(root)
     ventana.title("Editar tarea" if es_edicion else "Nueva tarea")
-    ventana.geometry("400x600")
+    ventana.geometry("400x800")
     ventana.resizable(False, False)
     ventana.place_window_center()
     ventana.grab_set()
@@ -630,7 +629,7 @@ def agregar_tarea_ui(tarea_existente=None, indice=None):
                 "tType": tipo_sel.get(),
                 "startDate": fecha_inicio,
                 "finishDate": fecha_fin,
-                "hoursPerDay": float(horas),
+                "horasDia": float(horas),
                 "public": publica,
                 "code": codigo
             }, token)

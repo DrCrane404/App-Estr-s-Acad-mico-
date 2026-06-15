@@ -20,31 +20,6 @@ frame.pack(fill="both", expand=True)
 
 tb.Label(frame, text="Mi Perfil", font=("Helvetica", 20, "bold"), bootstyle="inverse-default").pack(pady=(0, 20))
 
-# Foto de perfil 
-frame_foto = tb.Frame(frame)
-frame_foto.pack(pady=(0, 8))
-
-lbl_foto = tb.Label(frame_foto, text="👤", font=("Helvetica", 60))
-lbl_foto.pack()
-
-foto_img = [None]
-
-def seleccionar_foto():
-    try:
-        from PIL import Image, ImageTk
-        ruta = filedialog.askopenfilename(
-            title="Selecciona una foto",
-            filetypes=[("Imágenes", "*.png *.jpg *.jpeg")]
-        )
-        if ruta:
-            img = Image.open(ruta).resize((100, 100))
-            foto_img[0] = ImageTk.PhotoImage(img)
-            lbl_foto.config(image=foto_img[0], text="")
-    except ImportError:
-        messagebox.showwarning("Aviso", "Instala Pillow para usar fotos:\n.venv/bin/pip install Pillow")
-
-tb.Button(frame, text="Cambiar foto", bootstyle="info-outline", command=seleccionar_foto).pack(pady=(0, 20))
-
 # Campos 
 tb.Label(frame, text="Nombre completo", font=("Helvetica", 10)).pack(anchor="w")
 entry_nombre = tb.Entry(frame, width=40, font=("Helvetica", 11))

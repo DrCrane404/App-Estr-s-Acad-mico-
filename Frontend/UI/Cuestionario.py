@@ -200,9 +200,14 @@ def finalizar(idx):
     borrar_progreso()
     mostrar_resultado()
 
+def obtener_horas_sueno():
+    """Convierte la respuesta de la pregunta 1 a horas numéricas"""
+    horas_por_opcion = {0: 4, 1: 6, 2: 8}  # "3-5h", "5-7h", "7-9h"
+    return horas_por_opcion.get(respuestas.get(1), 7)
 
 def mostrar_resultado():
     resultado = calculadora.calcular_nivel_estres(respuestas)
+    horas_sueno = obtener_horas_sueno()
 
     # Guardar en el backend
     token = sesion.obtener()
@@ -212,6 +217,7 @@ def mostrar_resultado():
             resultado["categoria"],
             resultado["puntaje_total"],
             resultado["puntaje_maximo"],
+            horas_sueno,
             token
         )
     for widget in frame.winfo_children():

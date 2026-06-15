@@ -1,6 +1,6 @@
 import requests
 
-BASE_URL="http://localhost:3000"
+BASE_URL="https://apiestres.onrender.com"
 
 #EndPoints
 def post(endpoint, data):
@@ -125,16 +125,20 @@ def eliminar_tarea(task_id: int, token: str) -> dict:
 def obtener_tareas_publicas(token: str) -> dict:
     return get_auth("/task/public", token)
 
+def buscar_tareas_publicas(query: str, token: str) -> dict:
+    return get_auth(f"/task/search?q={query}", token)
+
 def unirse_tarea(code: str, token: str) -> dict:
     return post_auth("/task/join", {"code": code}, token)
 
 #-----------------Cuestionario y nivel de estres -----------------------------
-def guardar_cuestionario_inicial(puntuacion, categoria, puntaje_total, puntaje_maximo, token):
+def guardar_cuestionario_inicial(puntuacion, categoria, puntaje_total, puntaje_maximo, horas_sueno, token):
     return post_auth("/stress-level/inicial", {
         "puntuacion": puntuacion,
         "categoria": categoria,
         "puntajeTotal": puntaje_total,
-        "puntajeMaximo": puntaje_maximo
+        "puntajeMaximo": puntaje_maximo,
+        "horasSueno": horas_sueno
     }, token)
 
 def obtener_nivel_estres(token):
