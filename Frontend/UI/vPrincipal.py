@@ -52,7 +52,61 @@ def nivel_numerico_a_texto(n):
     elif n <= 5: return "Moderado"
     elif n <= 7: return "Alto"
     else: return "Muy alto"
+
+
 # Utilidades 
+
+import random
+
+MENSAJES_POSITIVOS = [
+    "¡Hoy es un buen día para avanzar un poco más! 💪",
+    "Recuerda: el descanso también es productividad. 😴",
+    "Cada tarea que completas es un paso hacia tu meta. 🎯",
+    "Eres capaz de más de lo que crees. ¡Sigue adelante! 🌟",
+    "Tómate un respiro, lo estás haciendo muy bien. 🌿",
+    "El estrés es temporal, tu esfuerzo es permanente. 🔥",
+    "Un día a la vez, un paso a la vez. ¡Tú puedes! 🚀",
+    "No olvides tomar agua y estirar un poco hoy. 💧",
+    "Estás más cerca de lograrlo de lo que piensas. ✨",
+    "El mejor momento para empezar fue ayer, el segundo mejor es ahora. 📚",
+]
+
+def mostrar_mensaje_positivo():
+    mensaje = random.choice(MENSAJES_POSITIVOS)
+    ventana = tb.Toplevel(root)
+    ventana.title("Mensaje del día")
+    ventana.geometry("380x180")
+    ventana.resizable(False, False)
+    ventana.place_window_center()
+
+    frame = tb.Frame(ventana, padding=30)
+    frame.pack(fill="both", expand=True)
+
+    tb.Label(
+        frame,
+        text="💬 Mensaje del día",
+        font=("Helvetica", 11, "bold"),
+        bootstyle="info"
+    ).pack(pady=(0, 12))
+
+    tb.Label(
+        frame,
+        text=mensaje,
+        font=("Helvetica", 12),
+        wraplength=320,
+        justify="center"
+    ).pack(pady=(0, 16))
+
+    tb.Button(
+        frame,
+        text="¡Gracias! 😊",
+        bootstyle="success",
+        width=16,
+        command=ventana.destroy
+    ).pack()
+
+    ventana.after(8000, ventana.destroy)  # se cierra solo a los 8 segundos
+
 def generar_codigo():
     return "EST-" + "".join(random.choices(string.ascii_uppercase + string.digits, k=3))
 
@@ -143,6 +197,48 @@ def actualizar_barra_estres():
         categoria, estilo = "Muy Alto", "danger"
     lbl_nivel_estres.config(text=f"{categoria} — {nivel} / 10", bootstyle=estilo)
     barra_estres.config(bootstyle=f"{estilo}-striped")
+
+    # Sugerencia de ayuda si el estrés es alto 
+    if nivel > 7.5:
+        root.after(3000, sugerir_ayuda)  # aparece 3s después de cargar
+
+
+def sugerir_ayuda():
+    ventana = tb.Toplevel(root)
+    ventana.title("⚠️ Nivel de estrés elevado")
+    ventana.geometry("400x220")
+    ventana.resizable(False, False)
+    ventana.place_window_center()
+
+    frame = tb.Frame(ventana, padding=30)
+    frame.pack(fill="both", expand=True)
+
+    tb.Label(
+        frame,
+        text="⚠️ Tu nivel de estrés es muy alto",
+        font=("Helvetica", 13, "bold"),
+        bootstyle="danger"
+    ).pack(pady=(0, 8))
+
+    tb.Label(
+        frame,
+        text="Te recomendamos visitar el apartado de Ayuda.\nEncontrarás técnicas y recursos para manejar el estrés.",
+        font=("Helvetica", 11),
+        wraplength=340,
+        justify="center",
+        bootstyle="secondary"
+            ).pack(pady=(0, 20))
+
+    frame_btn = tb.Frame(frame)
+    frame_btn.pack()
+
+    def ir_a_ayuda():
+        ventana.destroy()
+        import subprocess
+        subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "vAyuda.py")])
+
+    tb.Button(frame_btn, text="Ir a Ayuda", bootstyle="warning", width=14, command=ir_a_ayuda).pack(side="left", padx=(0, 8))
+    tb.Button(frame_btn, text="Cerrar", bootstyle="secondary-outline", width=10, command=ventana.destroy).pack(side="left")
 
 # Menú lateral 
 menu_visible = [False]
@@ -350,7 +446,13 @@ def abrir_calendario():
 
         dias_semana = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
         for i, d in enumerate(dias_semana):
-            tb.Label(frame_dias, text=d, font=("Helvetica", 10, "bold"), width=6, anchor="center").grid(row=0, column=i, padx=2, pady=2)
+            tb.Label(
+                frame_dias, 
+                text=d, 
+                font=("Helvetica", 10, "bold"), 
+                width=6, 
+                anchor="center"
+                ).grid(row=0, column=i, padx=2, pady=2)
 
         cal_dias = cal_module.monthcalendar(anio_actual[0], mes_actual[0])
 
@@ -726,4 +828,5 @@ cargar_tareas_api()
 refrescar_tareas()
 refrescar_publicas()
 actualizar_barra_estres()
+root.after(1500, mostrar_mensaje_positivo)
 root.mainloop()

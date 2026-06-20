@@ -42,7 +42,7 @@ def iniciar_login():
         import subprocess
         if nivel.get("existe") == False or nivel.get("Success") == False:
             # No ha completado el cuestionario
-            subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "Cuestionario.py")])
+            subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "Respiracion.py")])
         else:
             subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "Menu.py")])
     else:
