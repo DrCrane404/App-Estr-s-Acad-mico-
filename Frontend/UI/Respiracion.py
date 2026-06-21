@@ -9,7 +9,7 @@ import math
 # Ventana 
 root = tb.Window(themename="superhero")
 root.title("Técnica de respiración")
-root.geometry("420x500")
+root.geometry("420x900")
 root.resizable(False, False)
 root.place_window_center()
 

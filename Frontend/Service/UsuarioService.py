@@ -126,7 +126,15 @@ def obtener_tareas_publicas(token: str) -> dict:
     return get_auth("/task/public", token)
 
 def buscar_tareas_publicas(query: str, token: str) -> dict:
-    return get_auth(f"/task/search?q={query}", token)
+    try:
+        response = requests.get(
+            f"{BASE_URL}/task/search",
+            params={"q": query},
+            headers={"Authorization": f"Bearer {token}"}
+        )
+        return response.json()
+    except Exception as e:
+        return {"Success": False, "error": str(e)}
 
 def unirse_tarea(code: str, token: str) -> dict:
     return post_auth("/task/join", {"code": code}, token)
@@ -143,3 +151,9 @@ def guardar_cuestionario_inicial(puntuacion, categoria, puntaje_total, puntaje_m
 
 def obtener_nivel_estres(token):
     return get_auth("/stress-level/nivel", token)
+#======================================================
+def cambiar_password(current_password: str, new_password: str, token: str) -> dict:
+    return patch_auth("/auth/change-password", {
+        "currentPassword": current_password,
+        "newPassword": new_password
+    }, token)
