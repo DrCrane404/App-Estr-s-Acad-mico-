@@ -17,7 +17,7 @@ import UsuarioService
 root = tb.Window(themename="superhero")
 root.title("Panel Principal")
 root.geometry("1100x650")
-root.resizable(False, False)
+root.resizable(True, True)
 root.place_window_center()
 
 tareas = []
@@ -595,11 +595,6 @@ def buscar_tarea_publica():
         messagebox.showwarning("Vacío", "Escribe el nombre de la tarea a buscar.")
         return
     
-<<<<<<< HEAD
-    resultados = [t for t in tareas if t.get("publica") and nombre in t['nombre'].lower()]
-
-    if resultados:
-=======
     token = sesion.obtener()
     respuesta = UsuarioService.buscar_tareas_publicas(nombre, token)
     print("RESPUESTA BUSQUEDA:", respuesta)
@@ -615,7 +610,6 @@ def buscar_tarea_publica():
                 "estres": nivel_numerico_a_texto(t.get("stressLevel") or 0),
                 "codigo": t.get("code") or ""
             })
->>>>>>> 94a9e0b6b46b8396aa79b88673f0a5597dd1d542
         mostrar_resultados_publicos(resultados)
     else:
         messagebox.showerror("No encontrada", "No existe una tarea pública con ese nombre.")
@@ -631,7 +625,7 @@ def refrescar_publicas():
         frame_pub = tb.Frame(frame_lista_publica)
         frame_pub.pack(fill="x", pady=3)
         # Solo muestra el nombre, sin el código
-        tb.Label(frame_pub, text=f"🌐 {t['nombre']}", font=("Helvetica", 11), bootstyle="info").pack(side="left")
+        tb.Label(frame_pub, text=f"🌐 {t.get('nombre', 'Sin nombre')}", font=("Helvetica", 11), bootstyle="info").pack(side="left")
         tb.Button(
             frame_pub,
             text="Ver código",
