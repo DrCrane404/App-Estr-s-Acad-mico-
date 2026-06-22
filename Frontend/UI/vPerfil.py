@@ -35,6 +35,10 @@ entry_email.pack(pady=(4, 12), ipady=5)
 
 tb.Separator(frame).pack(fill="x", pady=12)
 
+tb.Label(frame, text="Contraseña actual (requerida para cambiarla)", font=("Helvetica", 10)).pack(anchor="w")
+entry_password_actual = tb.Entry(frame, width=40, font=("Helvetica", 11), show="●")
+entry_password_actual.pack(pady=(4, 12), ipady=5)
+
 tb.Label(frame, text="Nueva contraseña (opcional)", font=("Helvetica", 10)).pack(anchor="w")
 entry_password = tb.Entry(frame, width=40, font=("Helvetica", 11), show="●")
 entry_password.pack(pady=(4, 12), ipady=5)
@@ -56,36 +60,52 @@ def cargar_perfil():
 
 # Guardar cambios 
 def guardar_cambios():
-    nombre   = entry_nombre.get().strip()
-    username = entry_username.get().strip()
-    password = entry_password.get().strip()
-    confirm  = entry_confirm.get().strip()
+    nombre          = entry_nombre.get().strip()
+    username        = entry_username.get().strip()
+    password_actual = entry_password_actual.get().strip()
+    password        = entry_password.get().strip()
+    confirm         = entry_confirm.get().strip()
 
     if not all([nombre, username]):
         messagebox.showwarning("Campos vacíos", "Nombre y usuario son obligatorios.")
         return
-    if password and password != confirm:
-        messagebox.showerror("Error", "Las contraseñas no coinciden.")
-        return
-    if password and len(password) < 6:
-        messagebox.showwarning("Error", "La contraseña debe tener al menos 6 caracteres.")
-        return
+
+    if password:
+        if not password_actual:
+            messagebox.showwarning("Falta contraseña actual", "Ingresa tu contraseña actual para poder cambiarla.")
+            return
+        if password != confirm:
+            messagebox.showerror("Error", "Las contraseñas no coinciden.")
+            return
+        if len(password) < 6:
+            messagebox.showwarning("Error", "La contraseña debe tener al menos 6 caracteres.")
+            return
 
     token = sesion.obtener()
     if not token:
         messagebox.showerror("Error", "No hay sesión activa.")
         return
 
-    datos = {"name": nombre, "username": username}
-    if password:
-        datos["password"] = password
-
-    respuesta = UsuarioService.actualizar_perfil(datos, token)
-    if respuesta.get("success") or respuesta.get("name"):
-        messagebox.showinfo("Éxito", "Perfil actualizado correctamente.")
-    else:
-        error = respuesta.get("error", "No se pudo actualizar el perfil.")
+    # 1. Actualizar nombre y username
+    respuesta = UsuarioService.actualizar_perfil({"name": nombre, "username": username}, token)
+    if not (respuesta.get("success") or respuesta.get("name")):
+        error = respuesta.get("message", respuesta.get("error", "No se pudo actualizar el perfil."))
         messagebox.showerror("Error", error)
+        return
+
+    # 2. Si hay nueva contraseña, llamar al endpoint específico
+    if password:
+        respuesta_pass = UsuarioService.cambiar_password(password_actual, password, token)
+        if respuesta_pass.get("success") or respuesta_pass.get("message") == "Contraseña actualizada":
+            messagebox.showinfo("Éxito", "Perfil y contraseña actualizados correctamente.")
+        else:
+            error = respuesta_pass.get("message", "No se pudo cambiar la contraseña.")
+            messagebox.showerror("Error en contraseña", f"El perfil se actualizó, pero: {error}")
+        entry_password_actual.delete(0, "end")
+        entry_password.delete(0, "end")
+        entry_confirm.delete(0, "end")
+    else:
+        messagebox.showinfo("Éxito", "Perfil actualizado correctamente.")
 
 tb.Button(frame, text="Guardar cambios", bootstyle="success", width=30, command=guardar_cambios).pack(pady=(0, 8))
 

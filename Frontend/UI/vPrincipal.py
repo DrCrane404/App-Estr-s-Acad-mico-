@@ -21,11 +21,29 @@ root.resizable(False, False)
 root.place_window_center()
 
 tareas = []
+
+import base64
+import json
+
+def obtener_id_usuario():
+    token = sesion.obtener()
+    if not token:
+        return None
+    try:
+        payload = token.split(".")[1]
+        payload += "=" * (-len(payload) % 4)
+        datos = json.loads(base64.urlsafe_b64decode(payload))
+        return datos.get("id")
+    except Exception:
+        return None
+    
+
 def cargar_tareas_api():
     global tareas
     token = sesion.obtener()
     if not token:
         return
+    mi_id = obtener_id_usuario()
     respuesta = UsuarioService.obtener_mis_tareas(token)
     if isinstance(respuesta, list):
         tareas.clear()
@@ -34,13 +52,14 @@ def cargar_tareas_api():
                 "task_id":    t.get("task_id"),
                 "nombre":     t.get("title", ""),
                 "descripcion": t.get("description", ""),
-                "estres":     nivel_numerico_a_texto(t.get("stressLevel", 0)),
+                "estres":     nivel_numerico_a_texto(t.get("stressLevel") or 0),
                 "publica":    t.get("public", False),
                 "codigo":     t.get("code") or "",
                 "hecha":      t.get("completed", False),
                 "tType":      t.get("tType", "PERSONAL"),
                 "startDate":  t.get("startDate", ""),
-                "finishDate": t.get("finishDate", "")
+                "finishDate": t.get("finishDate", ""),
+                "esDueno":    t.get("user", {}).get("id") == mi_id
             })
 
 #Conversion para el calculo de estres
@@ -576,9 +595,27 @@ def buscar_tarea_publica():
         messagebox.showwarning("Vacío", "Escribe el nombre de la tarea a buscar.")
         return
     
+<<<<<<< HEAD
     resultados = [t for t in tareas if t.get("publica") and nombre in t['nombre'].lower()]
 
     if resultados:
+=======
+    token = sesion.obtener()
+    respuesta = UsuarioService.buscar_tareas_publicas(nombre, token)
+    print("RESPUESTA BUSQUEDA:", respuesta)
+
+    if isinstance(respuesta, list) and respuesta:
+        resultados = []
+        for t in respuesta:
+            resultados.append({
+                "task_id": t.get("task_id"),
+                "nombre": t.get("title", ""),
+                "descripcion": t.get("description", ""),
+                "horas": t.get("horasDia", 0),
+                "estres": nivel_numerico_a_texto(t.get("stressLevel") or 0),
+                "codigo": t.get("code") or ""
+            })
+>>>>>>> 94a9e0b6b46b8396aa79b88673f0a5597dd1d542
         mostrar_resultados_publicos(resultados)
     else:
         messagebox.showerror("No encontrada", "No existe una tarea pública con ese nombre.")
@@ -739,13 +776,22 @@ def agregar_tarea_ui(tarea_existente=None, indice=None):
         hoy = str(date.today())
 
         if es_edicion:
-            respuesta = UsuarioService.actualizar_tarea(tarea_existente["task_id"], {
-                "title": nombre,
-                "description": desc,
-                "stressLevel": nivel_texto_a_numerico(nivel),
-                "public": publica,
-                "code": codigo
-            }, token)
+            es_dueno = tarea_existente.get("esDueno", True)
+
+            if es_dueno:
+                respuesta = UsuarioService.actualizar_tarea(tarea_existente["task_id"], {
+                    "title": nombre,
+                    "description": desc,
+                    "stressLevel": nivel_texto_a_numerico(nivel),
+                    "public": publica,
+                    "code": codigo
+                }, token)
+            else:
+                # Miembro: solo puede modificar su propio nivel de estrés
+                respuesta = UsuarioService.actualizar_tarea(tarea_existente["task_id"], {
+                    "stressLevel": nivel_texto_a_numerico(nivel)
+                }, token)
+
             if respuesta.get("task_id") or respuesta.get("title"):
                 messagebox.showinfo("Éxito", "Tarea actualizada.", parent=ventana)
             else:
