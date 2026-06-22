@@ -44,7 +44,7 @@ def iniciar_login():
             # No ha completado el cuestionario
             subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "Respiracion.py")])
         else:
-            subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "Menu.py")])
+            subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "Respiracion.py")])
     else:
         error = respuesta.get("menssage", "Credenciales Incorrectas")
         messagebox.showerror("Error al iniciar sesion", error)

@@ -91,8 +91,6 @@ tb.Button(frame, text="Guardar cambios", bootstyle="success", width=30, command=
 
 def volver():
     root.destroy()
-    import subprocess
-    subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "vPrincipal.py")])
 
 lbl_volver = tb.Label(frame, text="← Volver", bootstyle="info", cursor="hand2", font=("Helvetica", 9, "underline"))
 lbl_volver.pack()

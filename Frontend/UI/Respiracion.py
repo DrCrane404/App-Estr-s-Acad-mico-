@@ -139,13 +139,20 @@ def terminar():
 def abrir_siguiente():
     root.destroy()
     import subprocess
-    # Verificar si es primera vez (existe progreso.json o no)
-    progreso_path = os.path.join(os.path.dirname(__file__), '..', 'progreso.json')
-    if os.path.exists(progreso_path):
-        siguiente = "Cuestionario.py"
+    sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'Service'))
+    import sesion
+    import UsuarioService
+
+    token = sesion.obtener()
+    if token:
+        nivel = UsuarioService.obtener_nivel_estres(token)
+        if nivel.get("existe") == False or nivel.get("Success") == False:
+            subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "Cuestionario.py")])
+        else:
+            subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "Menu.py")])
     else:
-        siguiente = "Cuestionario.py"  # siempre va al cuestionario después del login
-    subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), siguiente)])
+        # Viene del registro, siempre va al cuestionario
+        subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "Cuestionario.py")])
 
 tb.Button(
     frame,

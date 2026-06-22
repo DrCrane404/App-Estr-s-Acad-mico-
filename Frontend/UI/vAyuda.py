@@ -27,6 +27,17 @@ notebook.pack(fill="both", expand=True)
 tab_tutorial = tb.Frame(notebook, padding=20)
 notebook.add(tab_tutorial, text="📖 Cómo funciona")
 
+# Agregar scroll
+canvas_scroll = tb.Canvas(tab_tutorial, highlightthickness=0)
+scroll = tb.Scrollbar(tab_tutorial, orient="vertical", command=canvas_scroll.yview)
+canvas_scroll.configure(yscrollcommand=scroll.set)
+scroll.pack(side="right", fill="y")
+canvas_scroll.pack(side="left", fill="both", expand=True)
+
+inner = tb.Frame(canvas_scroll)
+canvas_scroll.create_window((0, 0), window=inner, anchor="nw")
+inner.bind("<Configure>", lambda e: canvas_scroll.configure(scrollregion=canvas_scroll.bbox("all")))
+
 pasos = [
     ("1. Regístrate e inicia sesión",
      "Crea tu cuenta con nombre, correo y contraseña. Si olvidas tu contraseña puedes recuperarla desde la pantalla de login."),
@@ -43,7 +54,7 @@ pasos = [
 ]
 
 for titulo, descripcion in pasos:
-    frame_paso = tb.Frame(tab_tutorial, bootstyle="dark", padding=12)
+    frame_paso = tb.Frame(inner, bootstyle="dark", padding=12)
     frame_paso.pack(fill="x", pady=5)
     tb.Label(frame_paso, text=titulo, font=("Helvetica", 11, "bold"), bootstyle="info").pack(anchor="w")
     tb.Label(frame_paso, text=descripcion, font=("Helvetica", 10), bootstyle="secondary", wraplength=520, justify="left").pack(anchor="w", pady=(4, 0))

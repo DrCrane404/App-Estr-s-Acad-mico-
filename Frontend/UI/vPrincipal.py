@@ -254,14 +254,40 @@ def toggle_menu():
         frame_menu.place(x=0, y=0, width=200, height=650)
         frame_menu.lift()
         menu_visible[0] = True
+        # Al hacer clic fuera del menú se cierra
+        root.bind("<Button-1>", cerrar_menu_si_clic_fuera)
+
+def cerrar_menu_si_clic_fuera(event):
+    x, y = event.x_root, event.y_root
+    mx = frame_menu.winfo_rootx()
+    my = frame_menu.winfo_rooty()
+    mw = frame_menu.winfo_width()
+    mh = frame_menu.winfo_height()
+
+    # También ignora clics en la barra superior donde está el botón ☰
+    bx = frame_top.winfo_rootx()
+    by = frame_top.winfo_rooty()
+    bw = frame_top.winfo_width()
+    bh = frame_top.winfo_height()
+
+    dentro_menu = mx <= x <= mx + mw and my <= y <= my + mh
+    dentro_barra = bx <= x <= bx + bw and by <= y <= by + bh
+
+    if not dentro_menu and not dentro_barra:
+        frame_menu.place_forget()
+        menu_visible[0] = False
+        root.unbind("<Button-1>")
 
 def abrir_perfil():
+    if menu_visible[0]:
+        toggle_menu()
     import subprocess
     subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "vPerfil.py")])
 
 def abrir_configuracion():
     toggle_menu()
-    messagebox.showinfo("Configuración", "Próximamente...")
+    import subprocess
+    subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "Menu.py")])
 
 def cerrar_sesion():
     if messagebox.askyesno("Cerrar sesión", "¿Estás seguro?"):
@@ -410,7 +436,7 @@ def ver_tarea_publica(tarea):
 def abrir_calendario():
     ventana = tb.Toplevel(root)
     ventana.title("Calendario de carga de horas")
-    ventana.geometry("520x540")
+    ventana.geometry("640x580")
     ventana.resizable(False, False)
     ventana.place_window_center()
         
@@ -549,7 +575,9 @@ def buscar_tarea_publica():
     if not nombre:
         messagebox.showwarning("Vacío", "Escribe el nombre de la tarea a buscar.")
         return
-    resultados = [t for t in tareas if t.get("publica") and nombre in t["nombre"].lower()]
+    
+    resultados = [t for t in tareas if t.get("publica") and nombre in t['nombre'].lower()]
+
     if resultados:
         mostrar_resultados_publicos(resultados)
     else:
